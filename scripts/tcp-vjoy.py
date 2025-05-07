@@ -5,8 +5,15 @@ from dircon_packet import DirconPacket, DPKT_MSGID_UNSOLICITED_CHARACTERISTIC_NO
 from services import CHARACTERISTICS
 from pyvjoystick import vigem as vg
 
-# Device connection parameters
-DEVICE_IP = "169.254.3.1"
+# List of Kickr device IPs (TCP)
+DEVICE_IPS = [
+    "169.254.3.1",
+    "169.254.3.2",
+    "169.254.3.3",
+    "169.254.3.4",
+]
+
+# Device TCP port
 DEVICE_PORT = 36866
 
 # Virtual gamepad setup
@@ -19,28 +26,33 @@ MAX_SPEED_KPH = 80.0  # maximum expected speed
 def map_speed_to_stick(speed):
     return int((min(speed, MAX_SPEED_KPH) / MAX_SPEED_KPH) * 32767)
 
-# Store latest speed
-global_speed = 0.0
+# Store latest speed for each device
+global_speeds = {i: 0.0 for i in range(len(DEVICE_IPS))}
 
+# Refactored update_gamepad to use multiple device speeds
 def update_gamepad():
-    x = map_speed_to_stick(global_speed)
+    lx = map_speed_to_stick(global_speeds.get(0, 0))
+    ly = map_speed_to_stick(global_speeds.get(1, 0))
+    rx = map_speed_to_stick(global_speeds.get(2, 0))
+    ry = map_speed_to_stick(global_speeds.get(3, 0))
     try:
-        gamepad.left_joystick(x_value=x, y_value=0)
+        gamepad.left_joystick(x_value=lx, y_value=ly)
+        gamepad.right_joystick(x_value=rx, y_value=ry)
         gamepad.update()
-        print(f"Gamepad updated: LX={x}")
+        print(f"Gamepad updated: LX={lx}, LY={ly}, RX={rx}, RY={ry}")
     except Exception as e:
         print("Error updating gamepad:", e)
 
-async def tcp_vjoy():
-    logging.basicConfig(level=logging.INFO)
+# Per-device TCP handler
+async def handle_device(ip, dev_index):
+    logging.info(f"Device {dev_index}: Connecting to {ip}:{DEVICE_PORT}")
     try:
-        reader, writer = await asyncio.open_connection(DEVICE_IP, DEVICE_PORT)
+        reader, writer = await asyncio.open_connection(ip, DEVICE_PORT)
     except Exception as e:
-        logging.error(f"Failed to connect to {DEVICE_IP}:{DEVICE_PORT}: {e}")
+        logging.error(f"Device {dev_index}: Connection failed to {ip}: {e}")
         return
-    logging.info(f"Connected to {DEVICE_IP}:{DEVICE_PORT}")
+    logging.info(f"Device {dev_index}: Connected to {ip}")
 
-    # Enable notifications for Indoor Bike Data
     seq = 1
     pkt = DirconPacket()
     pkt.isRequest = True
@@ -57,27 +69,30 @@ async def tcp_vjoy():
             break
         buf += data
 
-        # Parse incoming packets
         resp = DirconPacket()
         result = resp.parse(buf, seq - 1)
         if result == DPKT_PARSE_WAIT:
             continue
         if result < 0:
-            logging.error("Parse error, resetting buffer")
+            logging.error(f"Device {dev_index}: Parse error, resetting buffer")
             buf = b""
             continue
         buf = buf[result:]
 
-        # Handle notification
         if resp.Identifier == DPKT_MSGID_UNSOLICITED_CHARACTERISTIC_NOTIFICATION:
             decoded = resp.handle_notification()
             if decoded and "speed" in decoded:
-                global global_speed
-                global_speed = decoded["speed"]
+                global_speeds[dev_index] = decoded["speed"]
                 update_gamepad()
 
     writer.close()
     await writer.wait_closed()
 
+# Main entry: launch all device handlers
+async def main():
+    tasks = [asyncio.create_task(handle_device(ip, idx))
+             for idx, ip in enumerate(DEVICE_IPS)]
+    await asyncio.gather(*tasks)
+
 if __name__ == "__main__":
-    asyncio.run(tcp_vjoy())
+    asyncio.run(main())
