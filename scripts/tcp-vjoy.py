@@ -24,7 +24,7 @@ print("Virtual Xbox360 gamepad created via ViGEmBus")
 MAX_SPEED_KPH = 80.0  # maximum expected speed
 
 def map_speed_to_stick(speed):
-    return int((min(speed, MAX_SPEED_KPH) / MAX_SPEED_KPH) * 32767)
+    return int((min(speed, MAX_SPEED_KPH) / MAX_SPEED_KPH) * 32767) * 2
 
 # Store latest speed for each device
 global_speeds = {i: 0.0 for i in range(len(DEVICE_IPS))}
