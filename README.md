@@ -1,5 +1,8 @@
 # Kickr-to-Gamepad
 
+
+![banner](https://github.com/user-attachments/assets/ace7611b-39f9-4b1f-be71-68ea001ffa8e)
+
 This project connects one or more Wahoo KICKR trainers to a virtual Xbox 360 controller (via ViGEmBus) so that trainer speed data maps directly to gamepad axes.  
 
 Two modes are available:
