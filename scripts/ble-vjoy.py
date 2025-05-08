@@ -26,6 +26,14 @@ print("Virtual Xbox360 gamepad created and connected via ViGEmBus.")
 # Global dictionary to hold the latest speed (kph) for each device (by index 0-3).
 global_speeds = {0: 0.0, 1: 0.0, 2: 0.0, 3: 0.0}
 
+# Mapping of BLE device names to axis indices (0: left x, 1: left y, 2: right x, 3: right y)
+DEVICE_AXIS_MAPPING = {
+    "Wahoo KICKR 99CB": 0,
+    "Wahoo KICKR 9985": 1,
+    "Wahoo KICKR 9989": 2,
+    "Wahoo KICKR B483": 3,
+}
+
 # --- FTMS Indoor Bike Data Decoding ---
 
 
@@ -317,15 +325,20 @@ def device_notification_handler(sender, data, dev_index):
 # --- Asynchronous Connection Routine for Each Device ---
 async def handle_device(device, dev_index):
     print(f"Connecting to Device {dev_index}: {device.name} ({device.address})...")
+    # Determine axis index from device name mapping
+    axis = DEVICE_AXIS_MAPPING.get(device.name)
+    if axis is None:
+        print(f"Device {dev_index}: No axis mapping for {device.name}. Skipping.")
+        return
     async with BleakClient(device.address) as client:
         if not client.is_connected:
             print(f"Device {dev_index}: Failed to connect.")
             return
         print(f"Device {dev_index}: Connected.")
-        # Subscribe to Indoor Bike Data notifications.
+        # Subscribe to Indoor Bike Data notifications using mapped axis
         await client.start_notify(
             INDOOR_BIKE_DATA,
-            lambda sender, data: device_notification_handler(sender, data, dev_index),
+            lambda sender, data: device_notification_handler(sender, data, axis),
         )
         print(f"Device {dev_index}: Subscribed to Indoor Bike Data notifications.")
         try:
