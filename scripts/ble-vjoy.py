@@ -29,9 +29,9 @@ global_speeds = {0: 0.0, 1: 0.0, 2: 0.0, 3: 0.0}
 # Mapping of BLE device names to axis indices (0: left x, 1: left y, 2: right x, 3: right y)
 DEVICE_AXIS_MAPPING = {
     "Wahoo KICKR 99CB": 0,
-    "Wahoo KICKR 9985": 1,
+    "Wahoo KICKR B483": 1,
     "Wahoo KICKR 9989": 2,
-    "Wahoo KICKR B483": 3,
+    "Wahoo KICKR 9985": 3,
 }
 
 # --- FTMS Indoor Bike Data Decoding ---
