@@ -354,7 +354,7 @@ async def handle_device(device, dev_index):
 # --- Main Routine: Connect to Up to 4 KICKR Devices Simultaneously ---
 async def run():
     print("Scanning for BLE devices advertising the Fitness Machine service...")
-    devices = await BleakScanner.discover(timeout=10.0)
+    devices = await BleakScanner.discover(timeout=20.0)
 
     # Filter devices that have "KICKR" in their name.
     kickr_devices = [d for d in devices if d.name and "KICKR" in d.name]
