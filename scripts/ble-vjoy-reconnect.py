@@ -315,8 +315,8 @@ async def handle_device_loop(device, axis_index):
                     logging.warning(f"{device.name}: Disconnected")
         except Exception as e:
             logging.error(f"{device.name}: Error - {e}")
-        logging.info(f"{device.name}: Reconnecting in 3 seconds...")
-        await asyncio.sleep(3)
+        logging.info(f"{device.name}: Reconnecting...")
+        await asyncio.sleep(1)
 
 async def main():
     # Discover KICKR devices advertising the FTMS service
