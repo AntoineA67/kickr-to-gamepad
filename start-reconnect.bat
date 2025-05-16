@@ -1,1 +1,1 @@
-python scripts/ble-vjoy.py
+python scripts/ble-vjoy-reconnect.py
