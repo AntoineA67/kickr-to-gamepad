@@ -2,6 +2,12 @@ import asyncio
 import struct
 import logging
 from bleak import BleakScanner, BleakClient
+
+import sys
+sys.coinit_flags = 0
+from bleak.backends.winrt.util import uninitialize_sta
+uninitialize_sta()
+
 from pyvjoystick import vigem as vg
 
 # Set logging level (optional)
@@ -330,7 +336,7 @@ async def handle_device(device, dev_index):
     if axis is None:
         print(f"Device {dev_index}: No axis mapping for {device.name}. Skipping.")
         return
-    async with BleakClient(device.address) as client:
+    async with BleakClient(device, services={FITNESS_MACHINE}, timeout=20.0) as client:
         if not client.is_connected:
             print(f"Device {dev_index}: Failed to connect.")
             return
@@ -354,7 +360,7 @@ async def handle_device(device, dev_index):
 # --- Main Routine: Connect to Up to 4 KICKR Devices Simultaneously ---
 async def run():
     print("Scanning for BLE devices advertising the Fitness Machine service...")
-    devices = await BleakScanner.discover(timeout=20.0)
+    devices = await BleakScanner.discover(timeout=30.0, service_uuids=[FITNESS_MACHINE])
 
     # Filter devices that have "KICKR" in their name.
     kickr_devices = [d for d in devices if d.name and "KICKR" in d.name]
